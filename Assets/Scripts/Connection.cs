@@ -16,5 +16,10 @@ public class Connection
         this.from = from;
         this.to = to;
     }
+
+    public bool IsOpposite(Connection conn)
+    {
+        return conn.from.GetInstanceID() == this.to.GetInstanceID() && conn.to.GetInstanceID() == this.From.GetInstanceID();
+    }
 }
 

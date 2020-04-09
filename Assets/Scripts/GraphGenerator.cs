@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class GraphGenerator : MonoBehaviour
@@ -93,26 +94,6 @@ public class GraphGenerator : MonoBehaviour
         return Vector3.Distance(from.transform.position, to.transform.position);
     }
 
-    private void OnDrawGizmos()
-    {
-        if (matrix != null && graph != null)
-        {
-            Gizmos.color = Color.red;
-            for (int i = 0; i < x; i++)
-            {
-                for (int j = 0; j < y; j++)
-                {
-                    foreach(var connection in graph.GetConnections(matrix[i, j]))
-                    {
-                        var from = connection.From.transform.position;
-                        var to = connection.To.transform.position;
-                        Gizmos.DrawLine(from, to);
-                    }
-                }
-            }
-        }
-    }
-
     private void CreateConnections()
     {
         NodeComponent currFrom;
@@ -131,12 +112,13 @@ public class GraphGenerator : MonoBehaviour
                 {
                     if (UnityEngine.Random.Range(0f, 1f) < edgeProbability)
                     {
-                        graph.AddConnection(new Connection(currFrom, neighbor, Distance(currFrom, neighbor)));
-                        var connRenderer = Instantiate(connGameObj).GetComponent<LineRenderer>();
-                        connRenderer.positionCount = 2;
-                        //TODO: Find a way to render connections properly
-                        connRenderer.SetPosition(0, currFrom.transform.position + new Vector3(0, -neighbor.transform.localScale.y / 2));
-                        connRenderer.SetPosition(1, neighbor.transform.position + new Vector3(0, neighbor.transform.localScale.y / 2));                        
+                        var connection = new Connection(currFrom, neighbor, Distance(currFrom, neighbor));
+                        //Offset used to render differently the second connection between two nodes
+                        float yOffset = 0f;
+                        if (graph.GetConnections(connection.To).Any(c => c.To == connection.From))
+                            yOffset = 0.15f;
+                        graph.AddConnection(connection);
+                        RenderConnection(currFrom, neighbor, yOffset);
                     }
                 }
                 
@@ -144,4 +126,11 @@ public class GraphGenerator : MonoBehaviour
         }
     }
 
+    private void RenderConnection(NodeComponent currFrom, NodeComponent neighbor, float yOffset)
+    {
+        var connRenderer = Instantiate(connGameObj).GetComponent<LineRenderer>();
+        connRenderer.positionCount = 2;
+        connRenderer.SetPosition(0, currFrom.transform.position + new Vector3(0f, yOffset, 0f));
+        connRenderer.SetPosition(1, neighbor.transform.position + new Vector3(0f, yOffset, 0f));
+    }
 }

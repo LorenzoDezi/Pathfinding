@@ -107,6 +107,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   currentMat: {fileID: 2100000, guid: 9f1c3126e0aa96c47b8dcc115eccab6b, type: 2}
+  connMat: {fileID: 2100000, guid: e4954a705e8e214479b69f5c6469d762, type: 2}
   unvisitedMat: {fileID: 2100000, guid: ec6b5930f0322be4a9f938a12fc32868, type: 2}
   visitedMat: {fileID: 2100000, guid: 265faa42bef8d874aa691def220dd36c, type: 2}
   pathMat: {fileID: 2100000, guid: 38ccb4576a934b748a152b4977bc9cb7, type: 2}

@@ -65,7 +65,7 @@ public class Dijkstra : MonoBehaviour
         var unvisited = new List<NodeComponent>(graph.Nodes);
         if (unvisited.Count == 0)
             yield break;
-        //Initializing open and closed data structures
+        //Initializing visited and unvisited data structures
         //The visited node list
         var visited = new List<NodeComponent>();
         //The status dictionary with all informations about node
@@ -80,17 +80,21 @@ public class Dijkstra : MonoBehaviour
         {
             currentNode = GetMinNode(status, unvisited);
             if (status[currentNode].costSoFar == Mathf.Infinity) {
-                break; //the graph is partitioned
+                yield break; //the graph is partitioned
             }
-            //BUG: sometimes cost and connection are not set for a node. Find out why
             currentNode.SetAsCurrent();
             yield return new WaitForSeconds(0.5f);
-            //If it is the goal node, then terminate
+            //If it is the goal node, then terminate - following the book algorithm
             if (currentNode == goal) {
                 break;
             } 
             //Otherwise, gets its ungoing connection
             currentConnections = graph.GetConnections(currentNode);
+            foreach(var connection in currentConnections)
+            {
+                connection.To.SetAsConnection();
+            }
+            yield return new WaitForSeconds(0.5f);
             foreach(var connection in currentConnections)
             {
                 if (!visited.Contains(connection.To)) {
@@ -100,13 +104,16 @@ public class Dijkstra : MonoBehaviour
                         status[connection.To] = nodeInfo;
                 }
             }
+            foreach (var connection in currentConnections)
+            {
+                connection.To.ReleaseAsConnection();
+            }
             //We've finished looking at the connections for the current node, so add it to the closed list
             //and remove it from the open list
             unvisited.Remove(currentNode);
             visited.Add(currentNode);
             currentNode.Visit();
             yield return new WaitForSeconds(0.5f);
-
         }
         //We've here if we've either found a goal, or if we've no more nodes to search, find which
         if (currentNode == goal)
