@@ -60,6 +60,7 @@ public class GraphGenerator : MonoBehaviour
     private float minGap;
 
     private Graph graph = new Graph();
+    private PathfindingSolver solver;
 
     void Start()
     {
@@ -68,7 +69,9 @@ public class GraphGenerator : MonoBehaviour
         UnityEngine.Random.InitState(randomSeed);
         matrix = CreateGrid();
         CreateConnections();
-        Dijkstra.Solve(graph, matrix[0, 0], matrix[x-1, y-1]);
+        solver = GetComponent<PathfindingSolver>();
+        if(solver != null)
+            solver.Solve(graph, matrix[0, 0], matrix[x-1, y-1]);
     }
 
     private NodeComponent[,] CreateGrid()

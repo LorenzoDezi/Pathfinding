@@ -6,18 +6,9 @@ using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
 
-public class Dijkstra : MonoBehaviour
+public class DijkstraSolver : PathfindingSolver
 {
-    private static Dijkstra dijkstra;
     private Connection[] path = new Connection[0];
-
-    private void Awake()
-    {
-        if (dijkstra == null)
-            dijkstra = this;
-        else
-            Destroy(this);
-    }
 
     /// <summary>
     /// Returns the node with the minimum cost
@@ -25,7 +16,7 @@ public class Dijkstra : MonoBehaviour
     /// <param name="status"> as the dictionary Node -> NodeInfo </param>
     /// <param name="unvisited"> as the nodes still to visit </param>
     /// <returns></returns>
-    private static NodeComponent GetMinNode(List<NodeComponent> unvisited)
+    private NodeComponent GetMinNode(List<NodeComponent> unvisited)
     {
         NodeComponent minNode = null;
         float minCost = Mathf.Infinity;
@@ -40,13 +31,13 @@ public class Dijkstra : MonoBehaviour
         return minNode;
     }
 
-    public static void Solve(Graph graph, NodeComponent start, NodeComponent goal)
+    public override void Solve(Graph graph, NodeComponent start, NodeComponent goal)
     {
-        dijkstra.StartCoroutine(SolveCoroutine(graph, start, goal));
+        StartCoroutine(SolveCoroutine(graph, start, goal));
     }
 
 
-    public static IEnumerator SolveCoroutine(Graph graph, NodeComponent start, NodeComponent goal)
+    public IEnumerator SolveCoroutine(Graph graph, NodeComponent start, NodeComponent goal)
     {
         var unvisited = new List<NodeComponent>(graph.Nodes);
         if (unvisited.Count == 0)
@@ -108,7 +99,7 @@ public class Dijkstra : MonoBehaviour
             currentNode.MarkAsPath();
             //Reversing the path
             connections.Reverse();
-            dijkstra.path = connections.ToArray();
+            path = connections.ToArray();
         }
     }
 }
