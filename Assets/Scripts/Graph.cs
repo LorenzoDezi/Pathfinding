@@ -10,7 +10,7 @@ public class Graph
     private Dictionary<NodeComponent, List<Connection>> data = new Dictionary<NodeComponent, List<Connection>>();
     public NodeComponent[] Nodes { get => data.Keys.ToArray(); }
 
-    private void AddNode(NodeComponent node)
+    public void AddNode(NodeComponent node)
     {
         if (!data.ContainsKey(node))
             data.Add(node, new List<Connection>());

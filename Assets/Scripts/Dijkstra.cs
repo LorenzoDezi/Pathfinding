@@ -8,20 +8,6 @@ using UnityEngine;
 
 public class Dijkstra : MonoBehaviour
 {
-
-
-    private class NodeInfo {
-        public Connection connection;
-        public float costSoFar;
-
-        public NodeInfo(Connection connection, float costSoFar = 0f)
-        {
-            this.connection = connection;
-            this.costSoFar = costSoFar;
-        }
-
-    };
-
     private static Dijkstra dijkstra;
     private Connection[] path = new Connection[0];
 
@@ -39,16 +25,16 @@ public class Dijkstra : MonoBehaviour
     /// <param name="status"> as the dictionary Node -> NodeInfo </param>
     /// <param name="unvisited"> as the nodes still to visit </param>
     /// <returns></returns>
-    private static NodeComponent GetMinNode(Dictionary<NodeComponent, NodeInfo> status, List<NodeComponent> unvisited)
+    private static NodeComponent GetMinNode(List<NodeComponent> unvisited)
     {
         NodeComponent minNode = null;
         float minCost = Mathf.Infinity;
         foreach(var node in unvisited)
         {
-            if(status[node].costSoFar < minCost || minNode == null)
+            if(node.NodeInfo.costSoFar < minCost || minNode == null)
             {
                 minNode = node;
-                minCost = status[node].costSoFar;
+                minCost = node.NodeInfo.costSoFar;
             }
         }
         return minNode;
@@ -65,54 +51,47 @@ public class Dijkstra : MonoBehaviour
         var unvisited = new List<NodeComponent>(graph.Nodes);
         if (unvisited.Count == 0)
             yield break;
-        //Initializing visited and unvisited data structures
-        //The visited node list
-        var visited = new List<NodeComponent>();
-        //The status dictionary with all informations about node
-        var status = new Dictionary<NodeComponent, NodeInfo>();
+        //Initializing open data structure
+        //Using a proerty of nodeInfo we don't need a close list, avoiding searching
+        var open = new List<NodeComponent>();
         foreach(var node in unvisited)
-            status.Add(node, new NodeInfo(null, node == start ? 0 : Mathf.Infinity));
-
+           node.NodeInfo = new NodeInfo(null, node == start ? 0 : Mathf.Infinity);
         //The iteration begins
-        NodeComponent currentNode = start;
-        Connection[] currentConnections;
-        while (unvisited.Count > 0)
+        NodeComponent currentNode = null;
+        start.NodeInfo.category = Category.Open;
+        open.Add(start);
+        while (open.Count > 0)
         {
-            currentNode = GetMinNode(status, unvisited);
-            if (status[currentNode].costSoFar == Mathf.Infinity) {
-                yield break; //the graph is partitioned
-            }
-            currentNode.SetAsCurrent();
+            currentNode = GetMinNode(open);
+            currentNode.MarkAsCurrent();
             yield return new WaitForSeconds(0.5f);
             //If it is the goal node, then terminate - following the book algorithm
             if (currentNode == goal) {
                 break;
             } 
             //Otherwise, gets its ungoing connection
-            currentConnections = graph.GetConnections(currentNode);
-            foreach(var connection in currentConnections)
+            foreach(var connection in graph.GetConnections(currentNode))
             {
-                connection.To.SetAsConnection();
-            }
-            yield return new WaitForSeconds(0.5f);
-            foreach(var connection in currentConnections)
-            {
-                if (!visited.Contains(connection.To)) {
-                    var nodeInfo = new NodeInfo(connection, status[connection.From].costSoFar + connection.Cost);
+                var category = connection.To.NodeInfo.category;
+                var nodeInfo = new NodeInfo(connection, connection.From.NodeInfo.costSoFar + connection.Cost);
+                if (category == Category.Open) {
                     //if the current cost is less than the one of the current path, we don't need to go further
-                    if (status[connection.To].costSoFar > nodeInfo.costSoFar)
-                        status[connection.To] = nodeInfo;
+                    if (connection.To.NodeInfo.costSoFar > nodeInfo.costSoFar)
+                        connection.To.NodeInfo = nodeInfo;
+                } else if (category == Category.Unvisited)
+                {
+                    nodeInfo.category = Category.Open;
+                    open.Add(connection.To);
+                    connection.To.NodeInfo = nodeInfo;
                 }
             }
-            foreach (var connection in currentConnections)
-            {
-                connection.To.ReleaseAsConnection();
-            }
+            yield return new WaitForSeconds(0.5f);
             //We've finished looking at the connections for the current node, so add it to the closed list
             //and remove it from the open list
-            unvisited.Remove(currentNode);
-            visited.Add(currentNode);
-            currentNode.Visit();
+            var currNodeInfo = currentNode.NodeInfo;
+            currNodeInfo.category = Category.Closed;
+            currentNode.NodeInfo = currNodeInfo;
+            open.Remove(currentNode);
             yield return new WaitForSeconds(0.5f);
         }
         //We've here if we've either found a goal, or if we've no more nodes to search, find which
@@ -123,9 +102,8 @@ public class Dijkstra : MonoBehaviour
             while (currentNode != start)
             {
                 currentNode.MarkAsPath();
-                connections.Add(status[currentNode].connection);
-                Debug.Log(currentNode.name + "=> status: " + status[currentNode].connection);
-                currentNode = status[currentNode].connection.From;
+                connections.Add(currentNode.NodeInfo.connection);
+                currentNode = currentNode.NodeInfo.connection.From;
             }
             currentNode.MarkAsPath();
             //Reversing the path

@@ -7,55 +7,40 @@ using UnityEngine;
 
 public class NodeComponent : MonoBehaviour
 {
-    /// <summary>
-    /// Dijkstra is currently analyzing the connections of this node
-    /// </summary>
     [SerializeField]
-    private Material currentMat;
-    /// <summary>
-    /// Dijkstra is currently analyzing the node as a connection of the current one
-    /// </summary>
+    private Material openMat;
     [SerializeField]
-    private Material connMat;
-    private Material prevMat;
-    /// <summary>
-    /// The node is still not visited by dijkstra
-    /// </summary>
+    private Material closedMat;
     [SerializeField]
     private Material unvisitedMat;
-    /// <summary>
-    /// The node is visited by dijkstra
-    /// </summary>
     [SerializeField]
-    private Material visitedMat;
-    /// <summary>
-    /// The node is a part of the path towards the destination
-    /// </summary>
+    private Material currentMat;
     [SerializeField]
     private Material pathMat;
 
     private MeshRenderer meshRenderer;
+    private NodeInfo nodeInfo;
+    private Dictionary<Category, Material> categoryMatDict = new Dictionary<Category, Material>();
+
+    public NodeInfo NodeInfo
+    {
+        get => nodeInfo;
+        set => SetNodeInfo(value);
+    }
 
     private void Awake()
     {
         meshRenderer = GetComponent<MeshRenderer>();
         meshRenderer.material = unvisitedMat;
+        categoryMatDict.Add(Category.Open, openMat);
+        categoryMatDict.Add(Category.Closed, closedMat);
+        categoryMatDict.Add(Category.Unvisited, unvisitedMat);
     }
 
-    public void Visit()
+    private void SetNodeInfo(NodeInfo newInfo)
     {
-        meshRenderer.material = visitedMat;
-    }
-
-    public void SetAsCurrent()
-    {
-        meshRenderer.material = currentMat;
-    }
-
-    public void ReleaseAsConnection()
-    {
-        if(prevMat != null)
-            meshRenderer.material = prevMat;
+        this.nodeInfo = newInfo;
+        meshRenderer.material = categoryMatDict[newInfo.category];
     }
 
     public void MarkAsPath()
@@ -63,9 +48,8 @@ public class NodeComponent : MonoBehaviour
         meshRenderer.material = pathMat;
     }
 
-    internal void SetAsConnection()
+    public void MarkAsCurrent()
     {
-        prevMat = meshRenderer.material;
-        meshRenderer.material = connMat;
+        meshRenderer.material = currentMat;
     }
 }

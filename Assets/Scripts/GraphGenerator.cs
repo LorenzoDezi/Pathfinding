@@ -119,7 +119,8 @@ public class GraphGenerator : MonoBehaviour
                             yOffset = 0.15f;
                         graph.AddConnection(connection);
                         RenderConnection(currFrom, neighbor, yOffset);
-                    }
+                    } else
+                        graph.AddNode(currFrom);
                 }
                 
             }

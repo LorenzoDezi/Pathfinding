@@ -359,9 +359,9 @@ MonoBehaviour:
     type: 3}
   connGameObj: {fileID: 3565886734895687725, guid: 4e16b6de6101870468ebc8e55a8a3081,
     type: 3}
-  edgeProbability: 0.5
-  x: 3
-  y: 3
+  edgeProbability: 0.9
+  x: 5
+  y: 5
   maxGap: 2
   minGap: 2
 --- !u!4 &1687477531
