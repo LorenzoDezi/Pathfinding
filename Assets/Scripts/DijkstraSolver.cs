@@ -55,51 +55,59 @@ public class DijkstraSolver : PathfindingSolver
         {
             currentNode = GetMinNode(open);
             currentNode.MarkAsCurrent();
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(timeToWait);
             //If it is the goal node, then terminate - following the book algorithm
             if (currentNode == goal) {
                 break;
             } 
             //Otherwise, gets its ungoing connection
             foreach(var connection in graph.GetConnections(currentNode))
-            {
-                var category = connection.To.NodeInfo.category;
-                var nodeInfo = new NodeInfo(connection, connection.From.NodeInfo.costSoFar + connection.Cost);
-                if (category == Category.Open) {
-                    //if the current cost is less than the one of the current path, we don't need to go further
-                    if (connection.To.NodeInfo.costSoFar > nodeInfo.costSoFar)
-                        connection.To.NodeInfo = nodeInfo;
-                } else if (category == Category.Unvisited)
-                {
-                    nodeInfo.category = Category.Open;
-                    open.Add(connection.To);
-                    connection.To.NodeInfo = nodeInfo;
-                }
-            }
-            yield return new WaitForSeconds(0.5f);
+                ProcessConnection(open, connection);
+            yield return new WaitForSeconds(timeToWait);
             //We've finished looking at the connections for the current node, so add it to the closed list
             //and remove it from the open list
             var currNodeInfo = currentNode.NodeInfo;
             currNodeInfo.category = Category.Closed;
             currentNode.NodeInfo = currNodeInfo;
             open.Remove(currentNode);
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(timeToWait);
         }
         //We've here if we've either found a goal, or if we've no more nodes to search, find which
         if (currentNode == goal)
+            CalculatePath(start, currentNode);
+    }
+
+    private void CalculatePath(NodeComponent start, NodeComponent currentNode)
+    {
+        //Traversing the path from goal to start
+        List<Connection> connections = new List<Connection>();
+        while (currentNode != start)
         {
-            //Traversing the path from goal to start
-            List<Connection> connections = new List<Connection>();
-            while (currentNode != start)
-            {
-                currentNode.MarkAsPath();
-                connections.Add(currentNode.NodeInfo.connection);
-                currentNode = currentNode.NodeInfo.connection.From;
-            }
             currentNode.MarkAsPath();
-            //Reversing the path
-            connections.Reverse();
-            path = connections.ToArray();
+            connections.Add(currentNode.NodeInfo.connection);
+            currentNode = currentNode.NodeInfo.connection.From;
+        }
+        currentNode.MarkAsPath();
+        //Reversing the path
+        connections.Reverse();
+        path = connections.ToArray();
+    }
+
+    private void ProcessConnection(List<NodeComponent> open, Connection connection)
+    {
+        var category = connection.To.NodeInfo.category;
+        var nodeInfo = new NodeInfo(connection, connection.From.NodeInfo.costSoFar + connection.Cost);
+        if (category == Category.Open)
+        {
+            //if the current cost is less than the one of the current path, we don't need to go further
+            if (connection.To.NodeInfo.costSoFar > nodeInfo.costSoFar)
+                connection.To.NodeInfo = nodeInfo;
+        }
+        else if (category == Category.Unvisited)
+        {
+            nodeInfo.category = Category.Open;
+            open.Add(connection.To);
+            connection.To.NodeInfo = nodeInfo;
         }
     }
 }
