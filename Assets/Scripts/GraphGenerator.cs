@@ -3,9 +3,25 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
+
+//Graph generator state variables. The Graph generator solves
+//the path only when the start and the end nodes are chosen
+public enum GraphGenState
+{
+    NoNodeChosen = 0, StartChosen = 1, EndChosen = 2
+}
+
+public class GraphGenStateChangedEvent : UnityEvent<GraphGenState> { }
 
 public class GraphGenerator : MonoBehaviour
 {
+    
+    private GraphGenState state = GraphGenState.NoNodeChosen;
+    private delegate void NodeChosenDelegate(NodeComponent node);
+    private Dictionary<GraphGenState, NodeChosenDelegate> stateOnClickDict = 
+        new Dictionary<GraphGenState, NodeChosenDelegate>();
+
     /// <summary>
     /// Random seed used to generate random edges between the nodes 
     /// </summary>
@@ -46,6 +62,8 @@ public class GraphGenerator : MonoBehaviour
     /// The matrix representing the grid of nodes
     /// </summary>
     private NodeComponent[,] matrix;
+    private NodeComponent start;
+    private NodeComponent end;
 
     /// <summary>
     /// maximum gap between each node in the matrix
@@ -61,6 +79,9 @@ public class GraphGenerator : MonoBehaviour
 
     private Graph graph = new Graph();
     private PathfindingSolver solver;
+    private Camera mainCamera;
+
+    public GraphGenStateChangedEvent StateChangedEvent = new GraphGenStateChangedEvent();
 
     void Start()
     {
@@ -70,9 +91,41 @@ public class GraphGenerator : MonoBehaviour
         matrix = CreateGrid();
         CreateConnections();
         solver = GetComponent<PathfindingSolver>();
-        if(solver != null)
-            solver.Solve(graph, matrix[0, 0], matrix[x-1, y-1]);
+        mainCamera = Camera.main;
+        stateOnClickDict.Add(GraphGenState.NoNodeChosen, (node) => {
+            start = node;
+            state = GraphGenState.StartChosen;
+            StateChangedEvent.Invoke(state);
+        });
+        stateOnClickDict.Add(GraphGenState.StartChosen, (node) => {
+            end = node;
+            state = GraphGenState.EndChosen;
+            StateChangedEvent.Invoke(state);
+            Solve();
+        });
     }
+
+    private void Solve()
+    {
+        if (solver != null && start != null && end != null)
+            solver.Solve(graph, start, end);
+    }
+
+    private void Update()
+    {
+        if(Input.GetKeyDown(KeyCode.Mouse0) && state != GraphGenState.EndChosen)
+        {
+            var ray = mainCamera.ScreenPointToRay(Input.mousePosition);
+            RaycastHit info;
+            if(Physics.Raycast(ray.origin, ray.direction, out info, Mathf.Infinity))
+            {
+                var nodeComp = info.collider.GetComponent<NodeComponent>();
+                if (nodeComp != null)
+                    stateOnClickDict[state](nodeComp);
+            }
+        }
+    }
+
 
     private NodeComponent[,] CreateGrid()
     {
